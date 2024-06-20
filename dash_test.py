@@ -11,10 +11,12 @@ from dash.exceptions import PreventUpdate
 
 app = Dash()
 
-plugs = [str(item) for item in Path("./measurements/").iterdir() if item.is_dir()]
+plug_options = [{"label": str(item).split("\\")[-1], "value": str(item)} for item in Path("./measurements/").iterdir()
+                if
+                item.is_dir()]
 
-with open("monitor_settings.json", "r") as file:
-    monitor_settings = json.load(file)
+with open("monitor_settings.json", "r") as monitor_settings_file:
+    monitor_settings = json.load(monitor_settings_file)
 
 update_lock = threading.Lock()
 
@@ -60,7 +62,8 @@ app.layout = [
                                 children=[
                                     html.Label(children='Select a plug', htmlFor='plug_dropdown',
                                                style={'display': 'block', 'marginBottom': '10px'}),
-                                    dcc.Dropdown(options=plugs, value=plugs[0], id='plug_dropdown'),
+                                    dcc.Dropdown(options=plug_options, value=plug_options[0]["value"],
+                                                 id='plug_dropdown'),
                                 ]
                             ),
                             html.Div(
@@ -71,7 +74,7 @@ app.layout = [
                                 children=[
                                     html.Label(children='Select an experiment', htmlFor='experiment_dropdown',
                                                style={'display': 'block', 'marginBottom': '10px'}),
-                                    dcc.Dropdown(id='experiment_dropdown'),
+                                    dcc.Dropdown(id='experiment_dropdown', multi=True),
                                 ]
                             ),
                             html.Div(
@@ -82,7 +85,7 @@ app.layout = [
                                 children=[
                                     html.Label(children='Select a file', htmlFor='file_dropdown',
                                                style={'display': 'block', 'marginBottom': '10px'}),
-                                    dcc.Dropdown(id='file_dropdown'),
+                                    dcc.Dropdown(id='file_dropdown', multi=True),
                                 ]
                             ),
                         ]
@@ -107,9 +110,11 @@ app.layout = [
                                     html.Label('Cost of energy per kWh', htmlFor="cost_per_kwh",
                                                style={'display': 'block', 'marginBottom': '10px'}),
                                     dcc.Input(id='cost_per_kwh', type='text', value=monitor_settings["cost_per_kwh"],
-                                              style={'width': '50%', 'fontSize': '24px'}),
+                                              style={'width': '50%', 'fontSize': '24px'},
+                                              debounce=True),
                                     html.Hr(),
-                                    html.Div('Cost of energy for the selected experiment.', id='cost_of_experiment')
+                                    html.Div('Select an experiment or file to calculate cost of energy.',
+                                             id='cost_of_experiment')
                                 ]
                             ),
                             html.Div(
@@ -122,9 +127,11 @@ app.layout = [
                                                style={'display': 'block', 'marginBottom': '10px'}),
                                     dcc.Input(id='carbon_footprint', type='text',
                                               value=monitor_settings["gco2e_per_kwh"],
-                                              style={'width': '50%', 'fontSize': '24px'}),
+                                              style={'width': '50%', 'fontSize': '24px'},
+                                              debounce=True),
                                     html.Hr(),
-                                    html.Div('Emitted gCO2e for the selected experiment.', id='emission_of_experiment')
+                                    html.Div('Select an experiment or file to calculate carbon footprint.',
+                                             id='emission_of_experiment')
                                 ]
                             )
                         ]
@@ -145,7 +152,7 @@ app.layout = [
                        'alignItems': 'center'},
                 children=[
                     html.Div(
-                        style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'center', 'width': '100%'},
+                        style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'stretch', 'width': '100%'},
                         children=[
                             html.Div(
                                 style={
@@ -156,7 +163,7 @@ app.layout = [
                                     html.Label('Update Interval (ms)', htmlFor='graph_update_interval_input',
                                                style={'display': 'block', 'marginBottom': '10px'}),
                                     dcc.Input(id='graph_update_interval_input', type='number', value=1000, min=1000,
-                                              max=10000, step=1000, style={'width': '33%', 'fontSize': '24px'}),
+                                              max=10000, step=1000, style={'width': '50%', 'fontSize': '24px'}),
                                     html.Hr(),
                                     dcc.Checklist(id='graph_update_interval_toggle',
                                                   options=[{'label': 'Enable Auto Update', 'value': 'ON'}],
@@ -165,6 +172,19 @@ app.layout = [
                                                               'margin-bottom': '10px'},
                                                   inputStyle={'width': '24px', 'height': '24px',
                                                               'margin-right': '10px'}),
+                                ]
+                            ),
+                            html.Div(
+                                style={
+                                    'flex': '1', 'margin': '10px', 'padding': '20px', 'border': '2px solid #000',
+                                    'fontSize': '24px', 'textAlign': 'center'
+                                },
+                                children=[
+                                    html.Label('Smoothness Rolling Window', htmlFor='smoothness_input',
+                                               style={'display': 'block', 'marginBottom': '10px'}),
+                                    dcc.Input(id='smoothness_input', type='number', value=100, min=1,
+                                              max=100000, step=1, style={'width': '50%', 'fontSize': '24px'},
+                                              debounce=True),
                                 ]
                             )
                         ]
@@ -200,10 +220,10 @@ def update_interval(value):
     Input(component_id='plug_dropdown', component_property='value')
 )
 def update_experiment_dropdown(plug):
-    if plug is None:
+    if len(plug) == 0:
         return [], None
-    options = [{"label": str(item), "value": str(item)} for item in Path(plug).iterdir() if item.is_dir()]
-    options.insert(0, {"label": "All", "value": f"!{plug}"})
+    options = [{"label": str(item).split("\\")[-1], "value": str(item)} for item in Path(plug).iterdir() if
+               item.is_dir()]
     if len(options) == 0:
         return [], None
     value = options[0]['value']
@@ -216,14 +236,23 @@ def update_experiment_dropdown(plug):
     Input(component_id='experiment_dropdown', component_property='value')
 )
 def update_file_dropdown(experiment):
-    if experiment is None:
+    if len(experiment) == 0:
         return [], None
-    if experiment[0] == '!':
-        experiment = experiment[1:]
-    options = [{"label": str(item), "value": str(item)} for item in Path(experiment).iterdir() if item.is_file()]
-    options.insert(0, {"label": "All", "value": f"!{experiment}"})
+    if not type(experiment) == list:
+        experiment = [experiment]
+
+    options = []
+    all_value = ""
+    for ex in experiment:
+        if ex[0] == '!':
+            ex = ex[1:]
+        options += [{"label": str(item).split("\\")[-1], "value": str(item)} for item in Path(ex).iterdir() if
+                    item.is_file()]
+        all_value += f"!{ex}"
+
+    options.insert(0, {"label": "All", "value": all_value})
     if len(options) == 0:
-        return {}
+        return [], None
     value = options[0]['value']
     return options, value
 
@@ -236,61 +265,106 @@ def update_file_dropdown(experiment):
     Input(component_id='file_dropdown', component_property='value'),
     Input(component_id='graph_update_interval', component_property='n_intervals'),
     Input(component_id='cost_per_kwh', component_property='value'),
-    Input(component_id='carbon_footprint', component_property='value')
+    Input(component_id='carbon_footprint', component_property='value'),
+    Input(component_id='smoothness_input', component_property='value')
 )
-def update_graph(file, n_intervals, cost_per_kwh, carbon_footprint):
+def update_graph(files, n_intervals, cost_per_kwh, carbon_footprint, smoothness):
     if not update_lock.acquire(blocking=False):
         raise PreventUpdate
     try:
-        if file is None:
-            return px.line()
-        elif file[0] == '!':
+        invalid_experiment = ({}, {}, "Select an experiment or file to calculate cost of energy.",
+                              "Select an experiment or file to calculate carbon footprint.")
+        if files is None or len(files) == 0:
+            return invalid_experiment
+        if not type(files) == list:
+            files = [files]
 
-            files = list(Path(file[1:]).iterdir())
-            if not any([item.is_file() for item in files]):
-                return px.line()
+        files_to_read = {}
+        for file in files:
 
-            def read_file(item):
-                data_file = pd.read_csv(item)
-                if data_file.empty:
-                    return pd.DataFrame()
-                else:
-                    return data_file
+            if file[0] == '!':
+                folders = file.split("!")
+                folders = list(filter(None, folders))
 
+                for folder in folders:
+                    experiment = folder.split("\\")[-1]
+                    if not experiment in files_to_read:
+                        files_to_read[experiment] = []
+
+                    files_to_read[experiment] += list(Path(folder).iterdir())
+            else:
+                experiment = file.split("\\")[-2]
+                if not experiment in files_to_read:
+                    files_to_read[experiment] = []
+
+                files_to_read[experiment].append(Path(file))
+
+        if not files_to_read:
+            return invalid_experiment
+
+        print(files_to_read)
+
+        def read_file(item):
+            data_file = pd.read_csv(item)
+            if data_file.empty:
+                return pd.DataFrame()
+            else:
+                return data_file
+
+        full_data = {}
+        for experiment in files_to_read.keys():
             with ThreadPoolExecutor() as executor:
-                data = pd.concat(list(executor.map(read_file, [item for item in files if item.is_file()])))
+                full_data[experiment] = pd.concat(
+                    list(executor.map(read_file, [item for item in files_to_read[experiment] if item.is_file()])))
 
-            data["current_draw_smooth"] = data["current_draw"].rolling(window=100).mean()
+        scatters_cd = []
+        scatters_td = []
 
-            fig_cd = go.Figure(data=[go.Scatter(x=data["timestamp"], y=data["current_draw"], name='draw'),
-                                     go.Scatter(x=data["timestamp"], y=data["current_draw_smooth"],
-                                                name='draw_smooth')],
-                               layout=go.Layout(title='Power Consumption', xaxis={"title": 'timestamp'},
-                                                yaxis={"title": 'draw'}))
+        for experiment, readings in full_data.items():
+            readings.sort_values(by="timestamp", inplace=True)
+            readings["timestamp"] = readings["timestamp"] - readings["timestamp"].iloc[0]
 
-            fig_td = go.Figure(data=[go.Scatter(x=data["timestamp"], y=data["total_draw"], name='total')],
-                               layout=go.Layout(title='Total Power Consumption', xaxis={"title": 'timestamp'},
-                                                yaxis={"title": 'total'}))
+            readings["current_draw_smooth"] = readings["current_draw"].rolling(window=smoothness).mean()
+            readings["total_draw_smooth"] = readings["total_draw"].rolling(window=smoothness).mean()
 
-            total_power = data["total_draw"].iloc[-1] - data["total_draw"].iloc[0]
-            cost_of_experiment = total_power * float(cost_per_kwh)
-            emission_of_experiment = total_power * float(carbon_footprint)
+            scatters_cd.append(go.Scatter(x=readings["timestamp"], y=readings["current_draw"],
+                                          name=f'Raw Sensor Reading ({experiment})'))
+            scatters_cd.append(go.Scatter(x=readings["timestamp"], y=readings["current_draw_smooth"],
+                                          name=f'Smoothed Sensor Reading ({experiment})'))
 
-            gco2e_per_kilometer_car = 108.1
-            cost_of_experiment_string = f"Cost of experiment: {cost_of_experiment:.2f} €"
-            emission_of_experiment_string = (f"Emitted CO2: {emission_of_experiment:.2f} gCO2e"
-                                             f" - equivalent to {emission_of_experiment / gco2e_per_kilometer_car:.2f}"
-                                             f" km by car")
+            scatters_td.append(go.Scatter(x=readings["timestamp"], y=readings["total_draw"],
+                                          name=f'Raw Sensor Reading ({experiment})'))
+            scatters_td.append(go.Scatter(x=readings["timestamp"], y=readings["total_draw_smooth"],
+                                          name=f'Smoothed Sensor Reading ({experiment})'))
 
-            return fig_cd, fig_td, cost_of_experiment_string, emission_of_experiment_string
+        fig_cd = go.Figure(data=scatters_cd,
+                           layout=go.Layout(title='Draw (W) Over Time (s)',
+                                            xaxis={"title": 'Time (s)'},
+                                            yaxis={"title": 'Draw (W)'}))
 
+        fig_td = go.Figure(data=scatters_td,
+                           layout=go.Layout(title='Consumption (kWh) oder Time (s)',
+                                            xaxis={"title": 'Time (s)'},
+                                            yaxis={"title": 'Consumption (kWH)'}))
 
+        legend_layout = {"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1}
+        fig_cd.update_layout(legend=legend_layout)
+        fig_td.update_layout(legend=legend_layout)
 
-        else:
-            if not Path(file).is_file():
-                return px.line()
-            data = pd.read_csv(file)
-            return px.line(data, x='timestamp', y='draw', title='Power Consumption')
+        # concatenate the pandas dataframes in the dictionary
+        concat_data = pd.concat(full_data.values())
+
+        total_power = concat_data["total_draw"].max() - concat_data["total_draw"].min()
+        cost_of_experiment = total_power * float(cost_per_kwh)
+        emission_of_experiment = total_power * float(carbon_footprint)
+
+        gco2e_per_kilometer_car = 108.1
+        cost_of_experiment_string = f"Cost of experiment(s): {cost_of_experiment:.2f} €"
+        emission_of_experiment_string = (f"Emitted CO2: {emission_of_experiment:.2f} gCO2e"
+                                         f" - equivalent to {emission_of_experiment / gco2e_per_kilometer_car:.2f}"
+                                         f" km by car")
+
+        return fig_cd, fig_td, cost_of_experiment_string, emission_of_experiment_string
     finally:
         update_lock.release()
 
