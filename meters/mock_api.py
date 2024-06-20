@@ -1,12 +1,12 @@
-import numpy as np
-from meters.power_log_result import PowerLogResult
+from numpy import random
 from time import time
 
+from power_log_manager import PowerLogResult
 
-def get_data_mock(**kwargs) -> PowerLogResult:
+
+async def get_data_mock(**kwargs) -> PowerLogResult:
+    current_draw = random.randint(20, 250)
+    total_draw = random.randint(1, 5)
     timestamp = time()
-    draw = np.random.randint(0, 100)
 
-    result = PowerLogResult(timestamp=timestamp, draw=draw, misc=None)
-
-    return result
+    return PowerLogResult(timestamp=timestamp, current_draw=current_draw, total_draw=total_draw, misc=None)
