@@ -1,3 +1,4 @@
+import asyncio
 import csv
 import json
 import threading
@@ -38,7 +39,14 @@ class PowerLogManager:
     def start_experiment_logging(self):
         if self.loop_thread is None or not self.loop_thread.is_alive():
             self.stop_event.clear()
-            self.loop_thread = threading.Thread(target=self.log_data)
+
+            def async_intermediate():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(self.log_data())
+                loop.close()
+
+            self.loop_thread = threading.Thread(target=async_intermediate)
             self.loop_thread.start()
 
         print("Logging started")
