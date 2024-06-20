@@ -1,0 +1,6 @@
+{
+  "mock_plug": {
+    "device_type": "mock",
+    "device_ip": "http://127.0.0.1/"
+  }
+}
