@@ -6,7 +6,7 @@ import argparse
 
 async def main():
     print(f"Running metering for {args.device_name}")
-    manager = PowerLogManager(args.device_name)
+    manager = PowerLogManager(args.device_name, experiment_name="continuous", polling=0.5, log_interval=300)
     await manager.log_data()
 
 
