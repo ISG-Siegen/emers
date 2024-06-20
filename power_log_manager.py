@@ -1,11 +1,21 @@
 import csv
 import json
 import threading
+from dataclasses import dataclass
 from pathlib import Path
 from time import time, sleep
+from typing import Optional
 
 stop_event = threading.Event()
 loop_thread = None
+
+
+@dataclass
+class PowerLogResult:
+    timestamp: float
+    current_draw: float
+    total_draw: float
+    misc: Optional[dict] = None
 
 
 class PowerLogManager:
@@ -40,7 +50,7 @@ class PowerLogManager:
             self.loop_thread = None
         print("Logging stopped")
 
-    def log_data(self):
+    async def log_data(self):
         device_type = self.device["device_type"]
 
         module_name = f"meters.{device_type}_api"
@@ -70,12 +80,12 @@ class PowerLogManager:
                 log_file_name = log_base / f"{start_timestamp}.csv"
                 with open(log_file_name, 'w', newline='') as log_file:
                     writer = csv.writer(log_file)
-                    writer.writerow(['timestamp', 'draw'])
+                    writer.writerow(['timestamp', 'current_draw', 'total_draw'])
 
-            result = api(**self.device)
+            result: PowerLogResult = await api(**self.device)
 
             with open(log_file_name, 'a', newline='') as log_file:
                 writer = csv.writer(log_file)
-                writer.writerow([result.timestamp, result.draw])
+                writer.writerow([result.timestamp, result.current_draw, result.total_draw])
 
             sleep(self.polling)
