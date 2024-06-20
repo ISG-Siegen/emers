@@ -1,16 +1,6 @@
 {
-  "plug_plus_s": {
-    "device_type": "shelly",
-    "device_ip": "http://172.28.7.88/rpc",
-    "device_id": "0"
-  },
   "mock_plug": {
     "device_type": "mock",
     "device_ip": "http://127.0.0.1/"
-  },
-  "plug_plus_s_home": {
-    "device_type": "shelly",
-    "device_ip": "http://192.168.178.70/rpc",
-    "device_id": "0"
   }
 }
