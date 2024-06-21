@@ -6,6 +6,11 @@ from power_log_manager import PowerLogResult
 
 
 async def get_data_tapo(**kwargs) -> PowerLogResult:
+    """
+    Get data from TP-Link Tapo P115
+    :param kwargs: Must include "device_ip", "tapo_user", and "tapo_password"
+    :return: PowerLogResult containing energy readings
+    """
     client = ApiClient(kwargs["tapo_user"], kwargs["tapo_password"])
     device = await client.p115(kwargs["device_ip"])
 
