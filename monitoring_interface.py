@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 from dash import Dash, html, dcc, callback, Output, Input
 from dash.exceptions import PreventUpdate
@@ -236,7 +235,7 @@ def update_experiment_dropdown(plug):
     Input(component_id='experiment_dropdown', component_property='value')
 )
 def update_file_dropdown(experiment):
-    if len(experiment) == 0:
+    if experiment is None or len(experiment) == 0:
         return [], None
     if not type(experiment) == list:
         experiment = [experiment]
@@ -302,8 +301,6 @@ def update_graph(files, n_intervals, cost_per_kwh, carbon_footprint, smoothness)
         if not files_to_read:
             return invalid_experiment
 
-        print(files_to_read)
-
         def read_file(item):
             data_file = pd.read_csv(item)
             if data_file.empty:
@@ -325,6 +322,7 @@ def update_graph(files, n_intervals, cost_per_kwh, carbon_footprint, smoothness)
             readings["timestamp"] = readings["timestamp"] - readings["timestamp"].iloc[0]
 
             readings["current_draw_smooth"] = readings["current_draw"].rolling(window=smoothness).mean()
+            readings["total_draw"] = readings["total_draw"] - readings["total_draw"].min()
             readings["total_draw_smooth"] = readings["total_draw"].rolling(window=smoothness).mean()
 
             scatters_cd.append(go.Scatter(x=readings["timestamp"], y=readings["current_draw"],
@@ -370,4 +368,4 @@ def update_graph(files, n_intervals, cost_per_kwh, carbon_footprint, smoothness)
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host="192.168.178.44", port=5000)
+    app.run(debug=True, host="127.0.0.1", port=5000)
