@@ -1,0 +1,7 @@
+numpy==1.23.5
+tapo==0.3.0
+requests==2.31.0
+pandas==2.2.2
+plotly==5.18.0
+dash==2.17.0
+typing==3.7.4.3
