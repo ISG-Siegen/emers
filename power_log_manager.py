@@ -13,6 +13,9 @@ loop_thread = None
 
 @dataclass
 class PowerLogResult:
+    """
+    Dataclass to store the result of a smart plug reading.
+    """
     timestamp: float
     current_draw: float
     total_draw: float
@@ -20,7 +23,17 @@ class PowerLogResult:
 
 
 class PowerLogManager:
+    """
+    Class to manage the logging of power data from a smart plug.
+    """
     def __init__(self, device_name, experiment_name=None, polling=0.5, log_interval=300):
+        """
+        Initialize the PowerLogManager.
+        :param device_name: The name of the device that will be used to retrieve connection parameters from the settings file.
+        :param experiment_name: The name of the experiment that this data will be logged under.
+        :param polling:
+        :param log_interval:
+        """
         self.stop_event = threading.Event()
         self.loop_thread = None
         self.device_name = device_name
