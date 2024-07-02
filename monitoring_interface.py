@@ -262,14 +262,15 @@ def export_selected_experiments(n_clicks, files, cost_per_kwh, currency, carbon_
 
         timestamp = int(time())
 
-        export_cd = Path(f"./report/{timestamp}_figure_current_draw.svg")
-        export_td = Path(f"./report/{timestamp}_figure_total_draw.svg")
+        report_path = Path(f"./report/{timestamp}")
+        report_path.mkdir(exist_ok=False)
+
+        export_cd = Path(f"{report_path}/figure_current_draw.svg")
+        export_td = Path(f"{report_path}/figure_total_draw.svg")
         fig_cd.write_image(export_cd, engine="kaleido")
         fig_td.write_image(export_td, engine="kaleido")
 
         information_table = pd.DataFrame.from_dict(information_dict, orient="index")
-
-        print(information_table)
 
         information_table.rename(columns={"total_power": "Total Power (kWh)",
                                           "cost_of_experiment": f"Cost of Experiment ({currency})",
@@ -278,14 +279,14 @@ def export_selected_experiments(n_clicks, files, cost_per_kwh, currency, carbon_
                                           }, inplace=True)
         information_table.drop(columns=["cost_of_experiment_string", "emission_of_experiment_string"], inplace=True)
 
-        information_table = information_table.to_html(index=False)
+        information_table = information_table.to_html()
 
         html_string = '''
         <html>
             <head>
                 <style>
                     body{ margin: 50; background:whitesmoke; }
-                    table { width: 1800; border-collapse: collapse; }
+                    table { width: 1800; border-collapse: collapse; margin-top: 50; }
                     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
                     tr:hover { background-color: #f5f5f5; }
                     th { background-color: #f2f2f2; color: black; }
@@ -294,15 +295,15 @@ def export_selected_experiments(n_clicks, files, cost_per_kwh, currency, carbon_
             <body>
                 <h1>Power Consumption Monitor Report</h1>
                 <iframe width="1800" height="600" frameborder="0" seamless="seamless" scrolling="no" \
-                src="./''' + str(timestamp) + '''_figure_current_draw.svg"></iframe>
+                src="./figure_current_draw.svg"></iframe>
                 <iframe width="1800" height="600" frameborder="0" seamless="seamless" scrolling="no" \
-                src="./''' + str(timestamp) + '''_figure_total_draw.svg"></iframe>
+                src="./figure_total_draw.svg"></iframe>
                 ''' + information_table + '''
             </body>
         </html>
         '''
 
-        with open(f"./report/{timestamp}_report.html", "w") as file:
+        with open(f"./report/{timestamp}/report.html", "w") as file:
             file.write(html_string)
 
         return f"Figure exported to report folder"
@@ -337,6 +338,9 @@ def export_all_experiments(n_clicks, cost_per_kwh, currency, carbon_footprint, s
                                                       Path(experiment_folder).iterdir() if
                                                       item.is_file()])))
 
+        if not full_data:
+            return "No data available"
+
         scatter_data = make_scatters(full_data, smoothness, False)
 
         full_information = []
@@ -349,31 +353,30 @@ def export_all_experiments(n_clicks, cost_per_kwh, currency, carbon_footprint, s
             fig_cd.update_layout(legend=scatter_data["scatters_layout"]["legend"])
             fig_td.update_layout(legend=scatter_data["scatters_layout"]["legend"])
 
-            all_figures.append([fig_cd, fig_td])
-
-            information_dict = calculate_information(scatter_data["total_power"], scatter_data["power_by_experiment"],
-                                                     cost_per_kwh, currency, carbon_footprint)
-            full_information.append(information_dict)
+            all_figures.append({"fig_cd": fig_cd, "fig_td": fig_td, "experiment": scatters["experiment"]})
 
         timestamp = int(time())
 
-        report_folder = f"./report/{timestamp}"
-
-        Path(report_folder).mkdir(exist_ok=True, parents=True)
+        report_folder = Path(f"./report/{timestamp}")
+        report_folder.mkdir(exist_ok=False)
 
         figure_html = ""
         for ind, figure in enumerate(all_figures):
             export_cd = Path(f"{report_folder}/{ind}_figure_current_draw.svg")
             export_td = Path(f"{report_folder}/{ind}_figure_total_draw.svg")
-            figure[0].write_image(export_cd, engine="kaleido")
-            figure[1].write_image(export_td, engine="kaleido")
+            figure["fig_cd"].write_image(export_cd, engine="kaleido")
+            figure["fig_td"].write_image(export_td, engine="kaleido")
 
             figure_html += f'''
+                <h1>{figure["experiment"]}</h1>
                 <iframe width="1800" height="600" frameborder="0" seamless="seamless" scrolling="no" \
                 src="./''' + str(ind) + '''_figure_current_draw.svg"></iframe>
                 <iframe width="1800" height="600" frameborder="0" seamless="seamless" scrolling="no" \
                 src="./''' + str(ind) + '''_figure_total_draw.svg"></iframe>
             '''
+
+        information_dict = calculate_information(scatter_data["total_power"], scatter_data["power_by_experiment"],
+                                                 cost_per_kwh, currency, carbon_footprint)
 
         information_table = pd.DataFrame.from_dict(information_dict, orient="index")
 
@@ -384,14 +387,14 @@ def export_all_experiments(n_clicks, cost_per_kwh, currency, carbon_footprint, s
                                           }, inplace=True)
         information_table.drop(columns=["cost_of_experiment_string", "emission_of_experiment_string"], inplace=True)
 
-        information_table = information_table.to_html(index=False)
+        information_table = information_table.to_html()
 
         html_string = '''
                 <html>
                     <head>
                         <style>
                             body{ margin: 50; background:whitesmoke; }
-                            table { width: 1800; border-collapse: collapse; }
+                            table { width: 1800; border-collapse: collapse; margin-top: 50; }
                             th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
                             tr:hover { background-color: #f5f5f5; }
                             th { background-color: #f2f2f2; color: black; }
@@ -400,6 +403,7 @@ def export_all_experiments(n_clicks, cost_per_kwh, currency, carbon_footprint, s
                     <body>
                         <h1>Power Consumption Monitor Report</h1>
                         ''' + figure_html + information_table + '''
+                        <h1>Our experiments consumed a total of ''' + str(scatter_data["total_power"]) + ''' kWh</h1>
                     </body>
                 </html>
                 '''
@@ -408,8 +412,8 @@ def export_all_experiments(n_clicks, cost_per_kwh, currency, carbon_footprint, s
             file.write(html_string)
 
         return f"Figure exported to report folder"
-
-    return report_button_all_string_default
+    else:
+        return report_button_all_string_default
 
 
 @callback(
@@ -531,14 +535,16 @@ def make_scatters(full_data, smoothness, autosize=False):
 
         readings["total_draw_smooth"] = readings["total_draw"].rolling(window=smoothness).mean()
 
-        scatter_temp = {"cd": (go.Scatter(x=readings["timestamp"], y=readings["current_draw"],
-                                          name=f'Raw Sensor Reading ({experiment})')),
-                        "cds": (go.Scatter(x=readings["timestamp"], y=readings["current_draw_smooth"],
-                                           name=f'Smoothed Sensor Reading ({experiment})')),
-                        "td": (go.Scatter(x=readings["timestamp"], y=readings["total_draw"],
-                                          name=f'Raw Sensor Reading ({experiment})')),
-                        "tds": (go.Scatter(x=readings["timestamp"], y=readings["total_draw_smooth"],
-                                           name=f'Smoothed Sensor Reading ({experiment})'))}
+        scatter_temp = {
+            "experiment": experiment,
+            "cd": (go.Scatter(x=readings["timestamp"], y=readings["current_draw"],
+                              name=f'Raw Sensor Reading ({experiment})')),
+            "cds": (go.Scatter(x=readings["timestamp"], y=readings["current_draw_smooth"],
+                               name=f'Smoothed Sensor Reading ({experiment})')),
+            "td": (go.Scatter(x=readings["timestamp"], y=readings["total_draw"],
+                              name=f'Raw Sensor Reading ({experiment})')),
+            "tds": (go.Scatter(x=readings["timestamp"], y=readings["total_draw_smooth"],
+                               name=f'Smoothed Sensor Reading ({experiment})'))}
 
         scatters.append(scatter_temp)
 
@@ -601,7 +607,7 @@ def calculate_information(total_power, power_by_experiment, cost_per_kwh, curren
     for experiment, power in power_by_experiment.items():
         information_dict[experiment] = calculate_cost(power, cost_per_kwh, currency, carbon_footprint)
 
-    information_dict["all_experiments"] = calculate_cost(total_power, cost_per_kwh, currency, carbon_footprint)
+    information_dict["All experiments combined"] = calculate_cost(total_power, cost_per_kwh, currency, carbon_footprint)
 
     return information_dict
 
@@ -649,8 +655,8 @@ def update_graph(files, n_intervals, cost_per_kwh, currency, carbon_footprint, s
         return invalid_experiment
 
     return (fig_cd, fig_td,
-            information_dict["all_experiments"]["cost_of_experiment_string"],
-            information_dict["all_experiments"]["emission_of_experiment_string"])
+            information_dict["All experiments combined"]["cost_of_experiment_string"],
+            information_dict["All experiments combined"]["emission_of_experiment_string"])
 
 
 if __name__ == '__main__':
