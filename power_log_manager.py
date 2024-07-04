@@ -26,6 +26,7 @@ class PowerLogManager:
     """
     Class to manage the logging of power data from a smart plug.
     """
+
     def __init__(self, device_name, experiment_name=None, polling=0.5, log_interval=300):
         """
         Initialize the PowerLogManager.
@@ -70,6 +71,13 @@ class PowerLogManager:
             self.loop_thread.join()
             self.loop_thread = None
         print("Logging stopped")
+
+    def __enter__(self):
+        self.start_experiment_logging()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.finish_experiment_logging()
 
     async def log_data(self):
         device_type = self.device["device_type"]
