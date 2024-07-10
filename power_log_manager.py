@@ -27,19 +27,19 @@ class PowerLogManager:
     Class to manage the logging of power data from a smart plug.
     """
 
-    def __init__(self, device_name, experiment_name=None, polling=0.5, log_interval=300):
+    def __init__(self, device_name, experiment_name=None, polling_rate=0.5, log_interval=300):
         """
         Initialize the PowerLogManager.
         :param device_name: The name of the device that will be used to retrieve connection parameters from the settings file.
         :param experiment_name: The name of the experiment that this data will be logged under.
-        :param polling:
+        :param polling_rate:
         :param log_interval:
         """
         self.stop_event = threading.Event()
         self.loop_thread = None
         self.device_name = device_name
         self.experiment_name = experiment_name
-        self.polling = polling
+        self.polling_rate = polling_rate
         self.log_interval = log_interval
 
         with open("settings.json", "r") as file:
@@ -117,4 +117,4 @@ class PowerLogManager:
                 writer = csv.writer(log_file)
                 writer.writerow([result.timestamp, result.current_draw, result.total_draw])
 
-            sleep(self.polling)
+            sleep(self.polling_rate)
