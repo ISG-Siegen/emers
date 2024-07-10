@@ -1,3 +1,5 @@
+import argparse
+
 import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -611,4 +613,9 @@ def update_graph(files, n_intervals, cost_per_kwh, currency, carbon_footprint, s
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host="192.168.178.44", port=5000)
+    parser = argparse.ArgumentParser(description='Run monitoring interface.')
+    parser.add_argument('--ip', type=str, required=False, default="127.0.0.1")
+    parser.add_argument('--port', type=int, required=False, default=5000)
+    args = parser.parse_args()
+
+    app.run(debug=True, host=args.ip, port=args.port)
