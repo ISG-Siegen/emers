@@ -6,16 +6,16 @@
 - [Features](#features)
 - [Requirements](#requirements)
 - [Energy Meter Interfaces](#energy-meter-interfaces)
-  - [Supported Devices](#supported-devices)
-  - [Setup Instructions for Supported Devices](#setup-instructions-for-supported-devices)
-  - [Adding Support for New Devices](#adding-support-for-new-devices)
+    - [Supported Devices](#supported-devices)
+    - [Setup Instructions for Supported Devices](#setup-instructions-for-supported-devices)
+    - [Adding Support for New Devices](#adding-support-for-new-devices)
 - [Usage Examples](#usage-examples)
-  - [Measuring Energy Consumption](#measuring-energy-consumption)
-    - [Continuous Logging](#continuous-logging)
-    - [Integrated Logging](#integrated-logging)
-  - [Monitoring and Reporting Energy Consumption](#monitoring-and-reporting-energy-consumption)
-    - [Running the Monitoring Interface](#running-the-monitoring-interface)
-    - [Using the Monitoring Interface and Creating Reports](#using-the-monitoring-interface)
+    - [Measuring Energy Consumption](#measuring-energy-consumption)
+        - [Continuous Logging](#continuous-logging)
+        - [Integrated Logging](#integrated-logging)
+    - [Monitoring and Reporting Energy Consumption](#monitoring-and-reporting-energy-consumption)
+        - [Running the Monitoring Interface](#running-the-monitoring-interface)
+        - [Using the Monitoring Interface and Creating Reports](#using-the-monitoring-interface)
 
 ## Introduction
 
@@ -60,8 +60,8 @@ object that contains energy measurements.
 1. Obtain either the Shelly Plug Plus S or the TP-Link Tapo P115 smart plug.
 2. Read the manual of the smart plug to find out how to connect it to your Wi-Fi network and perform the initial setup.
    Make sure that the smart plug is connected to the same network as the computer running this software.
-3. Open `settings.json` and add an entry for the smart plug. The key is the desired identifier of the plug. The value
-   should be a dictionary with the following keys:
+3. Open [settings.json](settings.json) and add an entry for the smart plug. The key is the desired identifier of the
+   plug. The value should be a dictionary with the following keys:
     1. `device_type`: The type of the device. This must be one of the supported device types.
     2. `device_ip`: The IP address of the plug.
     3. For Shelly Plug Plus S:
@@ -89,12 +89,11 @@ object that contains energy measurements.
               "tapo_password": "password",
           }
           ```
-4. . `name`: The name of the plug.
 
 ## Adding Support for New Devices
 
 1. Choose a name for your new device type. We will refer to this name as `<device_type>`.
-2. Add a new file `<device_type>_api.py` in this directory.
+2. Add a new file `<device_type>_api.py` in the `meters` directory.
 3. Implement an asynchronous function `get_data_<device_type>(**kwargs) -> PowerLogResult` in the newly created file.
    Document the required keyword arguments that are passed to this function. These must be defined when configuring a
    device of `<device_type>` in `settings.json`.
