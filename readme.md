@@ -190,8 +190,9 @@ in [monitoring_interface.py](monitoring_interface.py).
 
 ### Using the Monitoring Interface and Creating Reports
 
-The monitoring interface consists of four major regions. A preview is shown
-here: ![user_interface.png](user_interface.png). The regions are marked with red numbers.
+The monitoring interface consists of four major regions. The regions are marked with red numbers in the preview here:
+
+![user_interface.png](user_interface.png)
 
 1. **Experiment Selection and Report Generation**: A dropdown menu to select the experiment to monitor and buttons to
    generate an energy consumption report.
