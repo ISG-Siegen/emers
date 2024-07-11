@@ -30,10 +30,10 @@ class PowerLogManager:
     def __init__(self, device_name, experiment_name=None, polling_rate=0.5, log_interval=300):
         """
         Initialize the PowerLogManager.
-        :param device_name: The name of the device that will be used to retrieve connection parameters from the settings file.
+        :param device_name: The name of the device that will be used to retrieve connection parameters.
         :param experiment_name: The name of the experiment that this data will be logged under.
-        :param polling_rate:
-        :param log_interval:
+        :param polling_rate: The rate at which the device will be polled for data in seconds.
+        :param log_interval: The interval at which the log file will be rotated in seconds.
         """
         self.stop_event = threading.Event()
         self.loop_thread = None
@@ -50,7 +50,7 @@ class PowerLogManager:
 
         self.device = devices[self.device_name]
 
-    def start_experiment_logging(self):
+    def _start_experiment_logging(self):
         if self.loop_thread is None or not self.loop_thread.is_alive():
             self.stop_event.clear()
 
@@ -63,21 +63,28 @@ class PowerLogManager:
             self.loop_thread = threading.Thread(target=async_intermediate)
             self.loop_thread.start()
 
-        print("Logging started")
+        print(f"EMERS logging started for device {self.device_name}, "
+              f"experiment {self.experiment_name} with "
+              f"polling rate {self.polling_rate} and "
+              f"log interval {self.log_interval}.")
 
-    def finish_experiment_logging(self):
+    def _finish_experiment_logging(self):
         if self.loop_thread is not None and self.loop_thread.is_alive():
             self.stop_event.set()
             self.loop_thread.join()
             self.loop_thread = None
-        print("Logging stopped")
+
+        print(f"EMERS logging stopped for device {self.device_name}, "
+              f"experiment {self.experiment_name} with "
+              f"polling rate {self.polling_rate} and "
+              f"log interval {self.log_interval}.")
 
     def __enter__(self):
-        self.start_experiment_logging()
+        self._start_experiment_logging()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.finish_experiment_logging()
+        self._finish_experiment_logging()
 
     async def log_data(self):
         device_type = self.device["device_type"]
