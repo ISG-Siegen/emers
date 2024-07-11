@@ -1,5 +1,6 @@
 {
   "cost_per_kwh": 0.3,
   "currency": "USD",
-  "gco2e_per_kwh": 258
+  "gco2e_per_kwh": 258,
+  "gco2e_per_kilometer_car": 108.1
 }
