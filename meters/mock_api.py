@@ -1,10 +1,10 @@
 from numpy import random
 from time import time
 
-from power_log_manager import PowerLogResult
+from measurement_manager import MeasurementLogResult
 
 
-async def get_data_mock(**kwargs) -> PowerLogResult:
+async def get_data_mock(**kwargs) -> MeasurementLogResult:
     """
     Get data from mock device for debugging purposes
     :param kwargs: No keyword arguments required
@@ -14,4 +14,4 @@ async def get_data_mock(**kwargs) -> PowerLogResult:
     total_draw = random.randint(1, 5)
     timestamp = time()
 
-    return PowerLogResult(timestamp=timestamp, current_draw=current_draw, total_draw=total_draw, misc=None)
+    return MeasurementLogResult(timestamp=timestamp, current_draw=current_draw, total_draw=total_draw, misc=None)

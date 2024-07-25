@@ -1,9 +1,10 @@
 from requests import post
 from time import time
-from power_log_manager import PowerLogResult
+
+from measurement_manager import MeasurementLogResult
 
 
-async def get_data_shelly(**kwargs) -> PowerLogResult:
+async def get_data_shelly(**kwargs) -> MeasurementLogResult:
     """
     Get data from Shelly Plug Plus S
     :param kwargs: Must include "device_ip" and "device_id"
@@ -26,4 +27,4 @@ async def get_data_shelly(**kwargs) -> PowerLogResult:
     total_draw = electricity_info['aenergy']['total'] / 1000
     timestamp = time()
 
-    return PowerLogResult(timestamp=timestamp, current_draw=current_draw, total_draw=total_draw, misc=None)
+    return MeasurementLogResult(timestamp=timestamp, current_draw=current_draw, total_draw=total_draw, misc=None)

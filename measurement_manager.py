@@ -12,7 +12,7 @@ loop_thread = None
 
 
 @dataclass
-class PowerLogResult:
+class MeasurementLogResult:
     """
     Dataclass to store the result of a smart plug reading.
     """
@@ -22,14 +22,14 @@ class PowerLogResult:
     misc: Optional[dict] = None
 
 
-class PowerLogManager:
+class MeasurementManager:
     """
-    Class to manage the logging of power data from a smart plug.
+    Class to manage the measuring and logging of power data from a smart plug.
     """
 
     def __init__(self, device_name, experiment_name=None, polling_rate=0.5, log_interval=300):
         """
-        Initialize the PowerLogManager.
+        Initialize the MeasurementManager.
         :param device_name: The name of the device that will be used to retrieve connection parameters.
         :param experiment_name: The name of the experiment that this data will be logged under.
         :param polling_rate: The rate at which the device will be polled for data in seconds.
@@ -51,6 +51,9 @@ class PowerLogManager:
         self.device = devices[self.device_name]
 
     def _start_experiment_logging(self):
+        """
+        Start the experiment logging. Private method.
+        """
         if self.loop_thread is None or not self.loop_thread.is_alive():
             self.stop_event.clear()
 
@@ -69,6 +72,9 @@ class PowerLogManager:
               f"log interval {self.log_interval}.")
 
     def _finish_experiment_logging(self):
+        """
+        Finish the experiment logging. Private method.
+        """
         if self.loop_thread is not None and self.loop_thread.is_alive():
             self.stop_event.set()
             self.loop_thread.join()
@@ -80,13 +86,22 @@ class PowerLogManager:
               f"log interval {self.log_interval}.")
 
     def __enter__(self):
+        """
+        Enter the context manager.
+        """
         self._start_experiment_logging()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Exit the context manager.
+        """
         self._finish_experiment_logging()
 
     async def log_data(self):
+        """
+        Log data from the smart plug.
+        """
         device_type = self.device["device_type"]
 
         module_name = f"meters.{device_type}_api"
@@ -118,7 +133,7 @@ class PowerLogManager:
                     writer = csv.writer(log_file)
                     writer.writerow(['timestamp', 'current_draw', 'total_draw'])
 
-            result: PowerLogResult = await api(**self.device)
+            result: MeasurementLogResult = await api(**self.device)
 
             with open(log_file_name, 'a', newline='') as log_file:
                 writer = csv.writer(log_file)

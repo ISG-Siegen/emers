@@ -2,10 +2,11 @@ from time import time
 from datetime import datetime
 from tapo import ApiClient
 from tapo.requests import EnergyDataInterval
-from power_log_manager import PowerLogResult
+
+from measurement_manager import MeasurementLogResult
 
 
-async def get_data_tapo(**kwargs) -> PowerLogResult:
+async def get_data_tapo(**kwargs) -> MeasurementLogResult:
     """
     Get data from TP-Link Tapo P115
     :param kwargs: Must include "device_ip", "tapo_user", and "tapo_password"
@@ -20,4 +21,4 @@ async def get_data_tapo(**kwargs) -> PowerLogResult:
     total_draw = sum(total_draw.data) / 1000
     timestamp = time()
 
-    return PowerLogResult(timestamp=timestamp, current_draw=current_draw, total_draw=total_draw, misc=None)
+    return MeasurementLogResult(timestamp=timestamp, current_draw=current_draw, total_draw=total_draw, misc=None)

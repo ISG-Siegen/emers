@@ -11,8 +11,8 @@
     - [Adding Support for New Devices](#adding-support-for-new-devices)
 - [Usage Examples](#usage-examples)
     - [Measuring Energy Consumption](#measuring-energy-consumption)
-        - [Continuous Logging](#continuous-logging)
-        - [Integrated Logging](#integrated-logging)
+        - [Continuous Measurement](#continuous-measurement)
+        - [Integrated Measurement](#integrated-measurement)
     - [Monitoring and Reporting Energy Consumption](#monitoring-and-reporting-energy-consumption)
         - [Running the Monitoring Interface](#running-the-monitoring-interface)
         - [Using the Monitoring Interface and Creating Reports](#using-the-monitoring-interface)
@@ -104,19 +104,20 @@ object that contains energy measurements.
 
 ## Measuring Energy Consumption
 
-Measuring energy consumption comes in two logging modes: continuous and integrated.
+Measuring energy consumption comes in two measurement modes: continuous and integrated.
 
-1. Continuous logging is designed to be run as a separate Python script and logs energy consumption data until stopped.
-   Continuous logging is implemented in [continuous_logging.py](continuous_logging.py).
-2. Integrated logging is designed to be used within code that executes experiments. Integrated logging is implemented
-   in [power_log_manager.py](power_log_manager.py).
+1. Continuous measurement is designed to be run as a separate Python script. It measures and logs energy consumption
+   data
+   until stopped. Continuous measurement is implemented in [continuous_measurement.py](continuous_measurement.py).
+2. Integrated measurement is designed to be used within code that executes experiments. Integrated measurement is
+   implemented in [measurement_manager.py](measurement_manager.py).
 
-### Continuous Logging
+### Continuous Measurement
 
-1. To run continuous logging, execute the following command in your terminal:
+1. To run continuous measurement, execute the following command in your terminal:
 
     ```bash
-     python continuous_logging.py --device_name <device_name> --polling_rate <polling_rate> --log_interval <log_interval>
+     python continuous_measurement.py --device_name <device_name> --polling_rate <polling_rate> --log_interval <log_interval>
     ```
 
     1. Replace `<device_name>` with the name of the device as specified in `settings.json`.
@@ -124,10 +125,10 @@ Measuring energy consumption comes in two logging modes: continuous and integrat
     3. The default `<log_interval>` is 300 (seconds), e.g., a new log file is created every 300 seconds.
 
 2. The logs are saved in the `measurements` directory. A new directory is created for each device, and
-   continuous logs are saved in a directory named `continuous`.
-3. Continuous logging can be stopped and restarted at any time.
+   continuous measurement logs are saved in a directory named `continuous`.
+3. Continuous measurement can be stopped and restarted at any time.
 
-### Integrated logging
+### Integrated Measurement
 
 1. The following Python code is a simplified example of what a recommender systems experiment may generally look like:
 
@@ -144,17 +145,17 @@ Measuring energy consumption comes in two logging modes: continuous and integrat
     1. The code snippet assumes that the functions `load_data`, `split_data`, `train_model`, and `evaluate_model` are
        defined elsewhere in the project.
 
-2. Integrated logging can be added to the code snippet above to log energy consumption data at specific points
+2. Integrated measurement can be added to the code snippet above to log energy consumption data at specific points
    in during execution. For example, to log only the training phase, the code snippet would be modified to look like
    this:
 
     ```python
     from my_functions import load_data, split_data, train_model, evaluate_model
-    from power_logger import PowerLogManager
+    from measurement_manager import MeasurementManager
     
     data = load_data()    
     train, test = split_data(data)
-    with PowerLogManager(device_name=device_name, experiment_name=experiment_name, polling_rate=polling_rate, log_interval=log_interval) as manager:
+    with MeasurementManager(device_name=device_name, experiment_name=experiment_name, polling_rate=polling_rate, log_interval=log_interval) as manager:
         model = train_model(train)
     predictions = model.predict(test)
     evaluate_model(predictions)
@@ -164,12 +165,12 @@ Measuring energy consumption comes in two logging modes: continuous and integrat
     2. Replace `experiment_name` with the name of the experiment, e.g., `my_algorithm_training`.
     3. The default `polling_rate` is 0.5 (seconds), e.g., the smart plug is polled twice a second.
     4. The default `log_interval` is 300 (seconds), e.g., a new log file is created every 300 seconds.
-    5. The `PowerLogManager` class is a context manager that logs energy consumption data during the execution of the
-       code block within the `with` statement. It automatically starts logging when entering the block and stops logging
-       when exiting the block, organizing the logs by device and experiment.
+    5. The `MeasurementManager` class is a context manager that logs energy consumption data during the execution of the
+       code block within the `with` statement. It automatically starts measuring and logging when entering the block and
+       stops logging when exiting the block, organizing the logs by device and experiment.
 
 3. The logs are saved in the `measurements` directory. A new directory is created for each device, and
-   integrated logs are saved in a directory named `experiment_name`.
+   integrated measurements are saved in a directory named `experiment_name`.
 
 ## Monitoring and Reporting Energy Consumption
 
