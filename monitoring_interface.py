@@ -10,7 +10,10 @@ from dash import Dash, html, dcc, callback, Output, Input, State, dash_table
 
 from time import time
 
+Path("./measurements").mkdir(exist_ok=True)
+
 app = Dash()
+app.title = "EMERS: Energy Meter for Recommender Systems"
 
 plug_options = [{"label": str(item).split("\\")[-1], "value": str(item)} for
                 item in Path("./measurements/").iterdir() if item.is_dir()]
@@ -374,11 +377,11 @@ def export_selected_experiments(n_clicks, files, cost_per_kwh, currency, carbon_
 
         timestamp = int(time())
 
-        report_path = Path(f"./report/{timestamp}")
-        report_path.mkdir(exist_ok=False)
+        report_folder = Path(f"./report/{timestamp}")
+        report_folder.mkdir(exist_ok=True, parents=True)
 
-        export_cd = Path(f"{report_path}/figure_current_draw.svg")
-        export_td = Path(f"{report_path}/figure_total_draw.svg")
+        export_cd = Path(f"{report_folder}/figure_current_draw.svg")
+        export_td = Path(f"{report_folder}/figure_total_draw.svg")
         fig_cd.write_image(export_cd, engine="kaleido")
         fig_td.write_image(export_td, engine="kaleido")
 
@@ -431,7 +434,7 @@ def export_selected_experiments(n_clicks, files, cost_per_kwh, currency, carbon_
         with open(f"./report/{timestamp}/report.html", "w") as file:
             file.write(html_string)
 
-        return f"Figure exported to report folder"
+        return f"Successfully created the report for the selected experiment"
     return report_button_selected_string_default
 
 
@@ -484,7 +487,7 @@ def export_all_experiments(n_clicks, cost_per_kwh, currency, carbon_footprint, c
         timestamp = int(time())
 
         report_folder = Path(f"./report/{timestamp}")
-        report_folder.mkdir(exist_ok=False)
+        report_folder.mkdir(exist_ok=True, parents=True)
 
         figure_html = ""
         for ind, figure in enumerate(all_figures):
@@ -544,7 +547,7 @@ def export_all_experiments(n_clicks, cost_per_kwh, currency, carbon_footprint, c
         with open(f"{report_folder}/{timestamp}_report.html", "w") as file:
             file.write(html_string)
 
-        return f"Figure exported to report folder"
+        return f"Successfully created the report for all experiments"
     else:
         return report_button_all_string_default
 
@@ -717,7 +720,7 @@ def make_scatters(full_data, smoothness, autosize=False):
 def calculate_cost(power, cost_per_kwh, currency, carbon_footprint, carbon_footprint_km):
     cost_of_experiment = power * float(cost_per_kwh)
     emission_of_experiment = power * float(carbon_footprint)
-    equivalent_by_car = emission_of_experiment / carbon_footprint_km
+    equivalent_by_car = float(emission_of_experiment) / float(carbon_footprint_km)
 
     information_dict = {
         "Total Energy Consumption (kWh)": round(power, 2),
