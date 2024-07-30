@@ -15,7 +15,7 @@ Path("./measurements").mkdir(exist_ok=True)
 app = Dash()
 app.title = "EMERS: Energy Meter for Recommender Systems"
 
-plug_options = [{"label": str(item).split("\\")[-1], "value": str(item)} for
+plug_options = [{"label": item.name, "value": str(item)} for
                 item in Path("./measurements/").iterdir() if item.is_dir()]
 
 with open("monitor_settings.json", "r") as monitor_settings_file:
@@ -144,7 +144,8 @@ app.layout = [
                                         options=plug_options,
                                         value=plug_options[0]["value"],
                                         id='plug_dropdown',
-                                        style=dropdown_style
+                                        style=dropdown_style,
+                                        clearable=False
                                     ),
                                 ]
                             ),
@@ -282,9 +283,6 @@ app.layout = [
                                         id='graph_update_interval_input',
                                         type='number',
                                         value=1000,
-                                        min=1000,
-                                        max=10000,
-                                        step=1000,
                                         style=input_style,
                                         debounce=True
                                     ),
@@ -398,9 +396,10 @@ def export_selected_experiments(n_clicks, files, cost_per_kwh, currency, carbon_
         information_table = information_df.to_html(index=False)
 
         statement_total_consumption = \
-        information_df.loc[information_df['Experiment'] == 'Combined', 'Total Energy Consumption (kWh)'].iloc[0]
+            information_df.loc[information_df['Experiment'] == 'Combined', 'Total Energy Consumption (kWh)'].iloc[0]
         statement_total_footprint = \
-        information_df.loc[information_df['Experiment'] == 'Combined', 'Carbon Footprint of Experiment (gCO2e)'].iloc[0]
+            information_df.loc[
+                information_df['Experiment'] == 'Combined', 'Carbon Footprint of Experiment (gCO2e)'].iloc[0]
 
         statement = (f"The total energy consumption of the selected experiments is "
                      f"{statement_total_consumption} kWh.<br>"
@@ -460,19 +459,19 @@ def export_all_experiments(n_clicks, cost_per_kwh, currency, carbon_footprint, c
     if n_clicks > 0:
         full_data = {}
         for plug_folder in Path("./measurements").iterdir():
-            for experiment_folder in Path(plug_folder).iterdir():
-                with ThreadPoolExecutor() as executor:
-                    full_data[experiment_folder] = pd.concat(
-                        list(executor.map(read_file, [item for item in
-                                                      Path(experiment_folder).iterdir() if
-                                                      item.is_file()])))
+            if plug_folder.is_dir():
+                for experiment_folder in Path(plug_folder).iterdir():
+                    with ThreadPoolExecutor() as executor:
+                        full_data[experiment_folder] = pd.concat(
+                            list(executor.map(read_file, [item for item in
+                                                          Path(experiment_folder).iterdir() if
+                                                          item.is_file()])))
 
         if not full_data:
             return "No data available"
 
         scatter_data = make_scatters(full_data, smoothness, False)
 
-        full_information = []
         all_figures = []
 
         for scatters in scatter_data["scatters"]:
@@ -565,10 +564,13 @@ def update_interval_disabled(checkbox_value):
 
 @callback(
     Output(component_id='graph_update_interval', component_property='interval'),
+    Output(component_id='graph_update_interval_input', component_property='value'),
     Input(component_id='graph_update_interval_input', component_property='value')
 )
 def update_interval(value):
-    return value
+    if value is None or value < 1000:
+        return 1000, 1000
+    return value, value
 
 
 @callback(
@@ -579,8 +581,7 @@ def update_interval(value):
 def update_experiment_dropdown(plug):
     if len(plug) == 0:
         return [], None
-    options = [{"label": str(item).split("\\")[-1], "value": str(item)} for item in Path(plug).iterdir() if
-               item.is_dir()]
+    options = [{"label": item.name, "value": str(item)} for item in Path(plug).iterdir() if item.is_dir()]
     if len(options) == 0:
         return [], None
     value = options[0]['value']
@@ -605,8 +606,7 @@ def update_file_dropdown(experiment):
     for ex in experiment:
         if ex[0] == '!':
             ex = ex[1:]
-        options += [{"label": str(item).split("\\")[-1], "value": str(item)} for item in Path(ex).iterdir() if
-                    item.is_file()]
+        options += [{"label": item.name, "value": str(item)} for item in Path(ex).iterdir() if item.is_file()]
         all_value += f"!{ex}"
 
     options.insert(0, {"label": "All", "value": all_value})
@@ -630,17 +630,19 @@ def get_experiment_files(files):
             folders = list(filter(None, folders))
 
             for folder in folders:
-                experiment = folder.split("\\")[-1]
+                folder = Path(folder)
+                experiment = folder.name
                 if not experiment in files_to_read:
                     files_to_read[experiment] = []
 
                 files_to_read[experiment] += list(Path(folder).iterdir())
         else:
-            experiment = file.split("\\")[-2]
+            file = Path(file)
+            experiment = file.parent.name
             if not experiment in files_to_read:
                 files_to_read[experiment] = []
 
-            files_to_read[experiment].append(Path(file))
+            files_to_read[experiment].append(file)
 
     if not files_to_read:
         raise ValueError
@@ -661,6 +663,8 @@ def make_scatters(full_data, smoothness, autosize=False):
     total_power = 0
 
     for experiment, readings in full_data.items():
+        if "timestamp" not in readings.columns:
+            continue
         readings.sort_values(by="timestamp", inplace=True)
         readings["timestamp"] = readings["timestamp"] - readings["timestamp"].iloc[0]
 
