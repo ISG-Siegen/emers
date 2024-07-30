@@ -461,11 +461,12 @@ def export_all_experiments(n_clicks, cost_per_kwh, currency, carbon_footprint, c
         for plug_folder in Path("./measurements").iterdir():
             if plug_folder.is_dir():
                 for experiment_folder in Path(plug_folder).iterdir():
-                    with ThreadPoolExecutor() as executor:
-                        full_data[experiment_folder] = pd.concat(
-                            list(executor.map(read_file, [item for item in
-                                                          Path(experiment_folder).iterdir() if
-                                                          item.is_file()])))
+                    if experiment_folder.is_dir():
+                        with ThreadPoolExecutor() as executor:
+                            full_data[experiment_folder] = pd.concat(
+                                list(executor.map(read_file, [item for item in
+                                                              Path(experiment_folder).iterdir() if
+                                                              item.is_file()])))
 
         if not full_data:
             return "No data available"
