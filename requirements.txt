@@ -5,4 +5,5 @@ pandas==2.2.2
 plotly==5.18.0
 dash==2.17.0
 typing==3.7.4.3
-kaleido==0.1.0.post1
+kaleido==0.1.0.post1; sys_platform == 'win32'
+kaleido==0.2.1; sys_platform != 'win32'
