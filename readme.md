@@ -46,8 +46,8 @@ with the community.
 # Energy Meter Interfaces
 
 The energy meter interfaces are stored in the `meters` folder. They implement an asynchronous
-method `get_data_<device_type>(**kwargs)` that reads data from a specific smart plug and returns a `PowerLogResult`
-object that contains energy measurements.
+method `get_data_<device_type>(**kwargs)` that reads data from a specific smart plug and returns
+a `MeasurementLogResult` object that contains energy measurements.
 
 ## Supported Devices
 
@@ -94,7 +94,8 @@ object that contains energy measurements.
 
 1. Choose a name for your new device type. We will refer to this name as `<device_type>`.
 2. Add a new file `<device_type>_api.py` in the `meters` directory.
-3. Implement an asynchronous function `get_data_<device_type>(**kwargs) -> PowerLogResult` in the newly created file.
+3. Implement an asynchronous function `get_data_<device_type>(**kwargs) -> MeasurementLogResult` in the newly created
+   file.
    Document the required keyword arguments that are passed to this function. These must be defined when configuring a
    device of `<device_type>` in `settings.json`.
 
