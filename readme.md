@@ -28,7 +28,7 @@ EMERS reads and logs energy readings from smart plugs, organizes them based on t
 provides a user interface to monitor and analyze measurements, and creates a standardized, automated report to share
 with the community.
 
-A demo video that showcases the installation and usage of EMERS is available on [Youtube](https://code.isg.beel.org/emers).
+A demo video that showcases the installation and usage of EMERS is available on [Youtube](https://youtu.be/vmXOcrVpRDg).
 
 ## Features
 
