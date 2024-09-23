@@ -1,5 +1,7 @@
 # EMERS: Energy Meter for Recommender Systems
 
+The paper (link coming soon) was accepted at the [RecSoGood 2024 Workshop](https://recsogood.github.io/recsogood24/) co-located with the [18th ACM Conference on Recommender Systems](https://recsys.acm.org/recsys24/).
+
 ## Table of Contents
 
 - [Introduction](#introduction)
@@ -25,6 +27,8 @@ systems experiments.
 EMERS reads and logs energy readings from smart plugs, organizes them based on the associated research experiment,
 provides a user interface to monitor and analyze measurements, and creates a standardized, automated report to share
 with the community.
+
+A demo video that showcases the installation and usage of EMERS is available on [Youtube](https://code.isg.beel.org/emers).
 
 ## Features
 
